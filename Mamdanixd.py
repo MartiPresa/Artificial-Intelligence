@@ -1,31 +1,42 @@
+"""
+Reglas de Mamdani
+
+R1
+- Si NOTA es BAJA entonces DESAPROBADO
+
+R2
+- SR1 Si CONCEPTO es REGULAR y NOTA es MEDIA entonces HABILITADO <-- min|__ max
+- SR2 Si CONCEPTO es REGULAR y NOTA es ALTA entonces HABILITADO <--min  |
+
+R3
+- SR3 Si CONCEPTO es BUENO y NOTA es ALTA entonces PROMOCION   <-- min   | 
+- SR4 Si CONCEPTO es EXCELENTE y NOTA es ALTA entonces PROMOCION <-- min |---> max
+- SR5 Si CONCEPTO es EXCELENTE y NOTA es MEDIA entonces PROMOCION <-- min| 
+
+"""
+
 import numpy as np
 import skfuzzy as fuzz
 import matplotlib.pyplot as plt
 
-# Generate universe variables
-#   * Quality and service on subjective ranges [0, 10]
-#   * Tip has a range of [0, 25] in units of percentage points
-concept = np.arange(0,11,1)
-numeric = np.arange(0,100,1)
-total = np.arange(0,100,1)
+concept = np.arange(0, 10.2, 0.2)
+numeric = np.arange(0, 101, 1)
+total = np.arange(0, 101, 1)
+
+# FUZZIFICATION
 
 # Generate fuzzy membership function
+conceptReg = fuzz.gaussmf(concept, 0, 4)
+conceptBueno = fuzz.gaussmf(concept, 8, 1.5)
+conceptExc = fuzz.gaussmf(concept, 10, 1.5)
 
-conceptReg = fuzz.trimf(concept, [0,0,7])
-conceptBueno = fuzz.trimf(concept, [5, 8,10])
-conceptExc = fuzz.trapmf(concept, [7,9,10,10])
+numericBajo = fuzz.trimf(numeric, [0, 0, 50])
+numericMed = fuzz.trimf(numeric, [30, 55, 80])
+numericAlto = fuzz.trimf(numeric, [60, 100, 100])
 
-#qual_lo = fuzz.gaussmf(x_qual, 2, 2)
-#qual_md = fuzz.gaussmf(x_qual, 5, 1)
-#qual_hi = fuzz.gaussmf(x_qual, 8, 0.5)
-
-numericMin = fuzz.trimf(numeric, [0,0,50])
-numericMed = fuzz.trimf(numeric, [30, 60,80])
-numericMax = fuzz.trimf(numeric, [60,100,100]) 
-
-totalMin = fuzz.trimf(total, [0, 0, 130])
-totalMed = fuzz.trimf(total, [0, 130, 250])
-totalMax = fuzz.trimf(total, [130, 250, 250])
+totalMin = fuzz.trimf(total, [0, 0, 40])
+totalMed = fuzz.trimf(total, [30, 50, 70])
+totalMax = fuzz.trimf(total, [60, 100, 100])
 
 # Visualize these universes and membership functions
 fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, figsize=(8, 9))
@@ -36,64 +47,88 @@ ax0.plot(concept, conceptExc, 'r', linewidth=1.5, label='Excelente')
 ax0.set_title('Concepto')
 ax0.legend()
 
-ax1.plot(numeric, numericMin, 'b', linewidth=1.5, label='Poor')
-ax1.plot(numeric, numericMed, 'g', linewidth=1.5, label='Acceptable')
-ax1.plot(numeric, numericMax, 'r', linewidth=1.5, label='Amazing')
+ax1.plot(numeric, numericBajo, 'b', linewidth=1.5, label='Bajo')
+ax1.plot(numeric, numericMed, 'g', linewidth=1.5, label='Medio')
+ax1.plot(numeric, numericAlto, 'r', linewidth=1.5, label='Alto')
 ax1.set_title('Nota numerica')
 ax1.legend()
 
-ax2.plot(total, totalMin, 'b', linewidth=1.5, label='Low')
-ax2.plot(total, totalMed, 'g', linewidth=1.5, label='Medium')
-ax2.plot(total, totalMax, 'r', linewidth=1.5, label='High')
+ax2.plot(total, totalMin, 'b', linewidth=1.5, label='Desaprobacion')
+ax2.plot(total, totalMed, 'g', linewidth=1.5, label='Habilitacion')
+ax2.plot(total, totalMax, 'r', linewidth=1.5, label='Promocion')
 ax2.set_title('Nota Final')
 ax2.legend()
 
-# Turn off top/right axes
-for ax in (ax0, ax1, ax2):
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.get_xaxis().tick_bottom()
-    ax.get_yaxis().tick_left()
-
-plt.tight_layout()
+# INFERENCE
 
 # We need the activation of our fuzzy membership functions at these values.
 # The exact values 6.5 and 9.8 do not exist on our universes...
 # This is what fuzz.interp_membership exists for!
-qual_level_lo = fuzz.interp_membership(concept, conceptReg, 6.5)
-qual_level_md = fuzz.interp_membership(concept, conceptBueno, 6.5)
-qual_level_hi = fuzz.interp_membership(concept, conceptExc, 6.5)
+concept_level_reg = fuzz.interp_membership(concept, conceptReg, 10)
+concept_level_bueno = fuzz.interp_membership(concept, conceptBueno, 10)
+concept_level_exc = fuzz.interp_membership(concept, conceptExc, 10)
 
-serv_level_lo = fuzz.interp_membership(numeric, numericMin, 9.8)
-serv_level_md = fuzz.interp_membership(numeric, numericMed, 9.8)
-serv_level_hi = fuzz.interp_membership(numeric, numericMax, 9.8)
+numeric_level_bajo = fuzz.interp_membership(numeric, numericBajo, 50)
+numeric_level_med = fuzz.interp_membership(numeric, numericMed, 50)
+numeric_level_alto = fuzz.interp_membership(numeric, numericAlto, 50)
 
-# Now we take our rules and apply them. Rule 1 concerns bad food OR service.
-# The OR operator means we take the maximum of these two.
-active_rule1 = np.fmax(qual_level_lo, serv_level_lo)
+print(f'CONCEPTO REG{concept_level_reg} \n CONCEPTO BUENO{concept_level_bueno} \n CONCEPTO EXC{concept_level_exc} ')
+print(f'NOTA BAJA{numeric_level_bajo} \n NOTA MEDIA{numeric_level_med} \n NOTA ALTA{numeric_level_alto} ')
 
-# Now we apply this by clipping the top off the corresponding output
-# membership function with `np.fmin`
-tip_activation_lo = np.fmin(active_rule1, totalMin)  # removed entirely to 0
+# Rule 1 -DESAPROBAR
+nota_final_des = np.fmin(numeric_level_bajo, totalMin)
 
-# For rule 2 we connect acceptable service to medium tipping
-tip_activation_md = np.fmin(serv_level_md, totalMed)
+# Rule 2 -HABILITAR
+subrule1 = (concept_level_reg * 0.2 + numeric_level_med * 0.8)
+subrule2 = (concept_level_reg* 0.2 + numeric_level_alto * 0.8)
+active_rule2 = np.fmax(subrule1, subrule2)
 
-# For rule 3 we connect high service OR high food with high tipping
-active_rule3 = np.fmax(qual_level_hi, serv_level_hi)
-tip_activation_hi = np.fmin(active_rule3, totalMax)
-tip0 = np.zeros_like(total)
+nota_final_hab = np.fmin(active_rule2, totalMed)  # removed entirely to 0
+
+# Rule 3 - PROMOCIONAR
+subrule3 = (concept_level_bueno * 0.2 + numeric_level_alto * 0.8)
+subrule4 = (concept_level_exc * 0.2 + numeric_level_alto * 0.8)
+
+subrule5 = np.fmin(concept_level_exc, numeric_level_med)
+active_rule3 = np.fmax(subrule3, np.fmax(subrule4,subrule5))
+#active_rule3 = np.fmax(subrule3, subrule4)
+
+# TRUNCA el grafico de nota final max
+nota_final_promo = np.fmin(active_rule3, totalMax)
+
+# pone un piso para rellenar la funcion truncada
+nota0 = np.zeros_like(total)
 
 # Visualize this
 fig, ax0 = plt.subplots(figsize=(8, 3))
 
-ax0.fill_between(total, tip0, tip_activation_lo, facecolor='b', alpha=0.7)
+ax0.fill_between(total, nota0, nota_final_hab, facecolor='b', alpha=0.7)
 ax0.plot(total, totalMin, 'b', linewidth=0.5, linestyle='--', )
-ax0.fill_between(total, tip0, tip_activation_md, facecolor='g', alpha=0.7)
+ax0.fill_between(total, nota0, nota_final_des, facecolor='g', alpha=0.7)
 ax0.plot(total, totalMed, 'g', linewidth=0.5, linestyle='--')
-ax0.fill_between(total, tip0, tip_activation_hi, facecolor='r', alpha=0.7)
+ax0.fill_between(total, nota0, nota_final_promo, facecolor='r', alpha=0.7)
 ax0.plot(total, totalMax, 'r', linewidth=0.5, linestyle='--')
-ax0.set_title('Output membership activity')
+ax0.set_title('INFERENCIA')
+plt.tight_layout()
+
+# AGREGATION
+aggregated = np.fmax(nota_final_hab,
+                     np.fmax(nota_final_des, nota_final_promo))
+
+# DEFUZZIFICATION
+nota = fuzz.defuzz(total, aggregated, 'centroid')
+print(f'NOTA = {nota}')
+nota_activation = fuzz.interp_membership(total, aggregated, nota)  # for plot
+
+# Visualize this
+fig, ax0 = plt.subplots(figsize=(8, 3))
+
+ax0.plot(total, totalMin, 'b', linewidth=0.5, linestyle='--', )
+ax0.plot(total, totalMed, 'g', linewidth=0.5, linestyle='--')
+ax0.plot(total, totalMax, 'r', linewidth=0.5, linestyle='--')
+ax0.fill_between(total, nota0, aggregated, facecolor='Orange', alpha=0.7)
+ax0.plot([nota, nota], [0, nota_activation], 'k', linewidth=1.5, alpha=0.9)
+ax0.set_title('AGREGACION')
 
 # Turn off top/right axes
 for ax in (ax0,):
@@ -103,36 +138,6 @@ for ax in (ax0,):
     ax.get_yaxis().tick_left()
 
 plt.tight_layout()
-
-# Aggregate all three output membership functions together
-aggregated = np.fmax(tip_activation_lo,
-                     np.fmax(tip_activation_md, tip_activation_hi))
-
-# Calculate defuzzified result
-tip = fuzz.defuzz(total, aggregated, 'centroid')
-tip_activation = fuzz.interp_membership(total, aggregated, tip)  # for plot
-
-# Visualize this
-fig, ax0 = plt.subplots(figsize=(8, 3))
-
-ax0.plot(total, totalMin, 'b', linewidth=0.5, linestyle='--', )
-ax0.plot(total, totalMed, 'g', linewidth=0.5, linestyle='--')
-ax0.plot(total, totalMax, 'r', linewidth=0.5, linestyle='--')
-ax0.fill_between(total, tip0, aggregated, facecolor='Orange', alpha=0.7)
-ax0.plot([tip, tip], [0, tip_activation], 'k', linewidth=1.5, alpha=0.9)
-ax0.set_title('Aggregated membership and result (line)')
-
-# Turn off top/right axes
-for ax in (ax0,):
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.get_xaxis().tick_bottom()
-    ax.get_yaxis().tick_left()
-
-plt.tight_layout()
-
-
-
 
 # Generate trapezoidal membership function on range [0, 1]
 x = np.arange(0, 5.05, 0.1)
