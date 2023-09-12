@@ -14,27 +14,27 @@ import numpy as np
 import skfuzzy as fuzz
 import matplotlib.pyplot as plt
 
-tamano_humedad = np.arange(0.5, 4.5, 0.5)
+tamano_humedad = np.arange(0.5, 4.1, 0.1)
 tamano_malezas = np.arange(0, 1.1, 0.1)
-tamano_horas = np.arange(0.5 ,4.5, 0.5)
+tamano_horas = np.arange(0.5 ,4.1, 0.1)
 
-humedad_mf_baja = fuzz.trapmf(tamano_humedad,[0.5, 0.5, 0.3, 0.6])
-humedad_mf_alta = fuzz.trapmf(tamano_humedad, [0.3, 0.6, 1, 1])
+humedad_mf_baja = fuzz.trapmf(tamano_humedad,[0.5, 0.5, 1.5, 2.5])
+humedad_mf_alta = fuzz.trapmf(tamano_humedad, [1.5, 3, 4, 4])
 
-maleza_mf_esc = fuzz.trapmf(tamano_malezas,[0.33, 0.5, 1, 1])
-maleza_mf_ab = fuzz.trapmf(tamano_malezas,[0, 0, 0.33, 0.6])
+maleza_mf_esc = fuzz.trapmf(tamano_malezas,[0, 0, 0.3, 0.6])
+maleza_mf_ab = fuzz.trapmf(tamano_malezas,[0.4, 0.5, 1, 1])
 
-horas_mf_pocas = fuzz.trimf(tamano_horas, [0, 0, 40])
-horas_mf_muchas = fuzz.trimf(tamano_horas, [30, 50, 70])
+horas_mf_pocas = fuzz.trapmf(tamano_horas, [0.5, 0.5, 1.8, 3])
+horas_mf_muchas = fuzz.trapmf(tamano_horas, [1.5, 3, 4, 4])
 
 # Visualize these universes and membership functions
-fig, (ax0, ax1) = plt.subplots(nrows=2, figsize=(8, 9))
+fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, figsize=(8, 9))
 
 # value_x = 8
 # value_x = -8
 # value_x = 5
-value_humedad = -5
-value_malotes = 5
+value_humedad = 1.87
+value_malotes = 0.434
 
 
 ax0.plot(tamano_humedad, humedad_mf_baja, 'b', linewidth=1.5, label='Baja')
@@ -47,6 +47,11 @@ ax1.plot(tamano_malezas, maleza_mf_esc, 'b', linewidth=1.5, label='Escasa')
 ax1.plot(tamano_malezas, maleza_mf_ab, 'g', linewidth=1.5, label='Abundante')
 ax1.set_title('Malezas')
 ax1.legend()
+
+ax2.plot(tamano_horas, horas_mf_pocas, 'g', linewidth=1.5, label='Pocas')
+ax2.plot(tamano_horas, horas_mf_muchas, 'b', linewidth=1.5, label='Muchas')
+ax2.set_title('Horas')
+ax2.legend()
 
 # INFERENCE
 
@@ -61,7 +66,7 @@ malezas_esc = fuzz.interp_membership(tamano_malezas, maleza_mf_esc, value_malote
 malezas_ab = fuzz.interp_membership(tamano_malezas, maleza_mf_ab, value_malotes)
 
 # Rule 1 
-horas_muchas = np.fmax(np.fmax(humedad_baja, malezas_ab),horas_mf_muchas)
+horas_muchas = np.fmin(np.fmax(humedad_baja, malezas_ab),horas_mf_muchas)
 
 # Rule 2 
 horas_pocas = np.fmin(np.fmin(humedad_alta, malezas_esc),horas_mf_pocas)
