@@ -64,13 +64,14 @@ ax2.legend()
 # We need the activation of our fuzzy membership functions at these values.
 # The exact values 6.5 and 9.8 do not exist on our universes...
 # This is what fuzz.interp_membership exists for!
-concept_level_reg = fuzz.interp_membership(concept, conceptReg, 10)
-concept_level_bueno = fuzz.interp_membership(concept, conceptBueno, 10)
-concept_level_exc = fuzz.interp_membership(concept, conceptExc, 10)
 
-numeric_level_bajo = fuzz.interp_membership(numeric, numericBajo, 50)
-numeric_level_med = fuzz.interp_membership(numeric, numericMed, 50)
-numeric_level_alto = fuzz.interp_membership(numeric, numericAlto, 50)
+concept_level_reg = fuzz.interp_membership(concept, conceptReg, 5)
+concept_level_bueno = fuzz.interp_membership(concept, conceptBueno, 5)
+concept_level_exc = fuzz.interp_membership(concept, conceptExc, 5)
+
+numeric_level_bajo = fuzz.interp_membership(numeric, numericBajo, 100)
+numeric_level_med = fuzz.interp_membership(numeric, numericMed, 100)
+numeric_level_alto = fuzz.interp_membership(numeric, numericAlto, 100)
 
 print(f'CONCEPTO REG{concept_level_reg} \n CONCEPTO BUENO{concept_level_bueno} \n CONCEPTO EXC{concept_level_exc} ')
 print(f'NOTA BAJA{numeric_level_bajo} \n NOTA MEDIA{numeric_level_med} \n NOTA ALTA{numeric_level_alto} ')
@@ -81,14 +82,15 @@ nota_final_des = np.fmin(numeric_level_bajo, totalMin)
 # Rule 2 -HABILITAR
 subrule1 = (concept_level_reg * 0.2 + numeric_level_med * 0.8)
 subrule2 = (concept_level_reg* 0.2 + numeric_level_alto * 0.8)
-active_rule2 = np.fmax(subrule1, subrule2)
+# subrule1 or subrule2 --> fmax
+active_rule2 = np.fmax(subrule1, subrule2) 
 
-nota_final_hab = np.fmin(active_rule2, totalMed)  # removed entirely to 0
+# hacemos multiplicacion en vez de usar el fmin?
+nota_final_hab = np.fmin(active_rule2, totalMed) 
 
 # Rule 3 - PROMOCIONAR
 subrule3 = (concept_level_bueno * 0.2 + numeric_level_alto * 0.8)
 subrule4 = (concept_level_exc * 0.2 + numeric_level_alto * 0.8)
-
 subrule5 = np.fmin(concept_level_exc, numeric_level_med)
 active_rule3 = np.fmax(subrule3, np.fmax(subrule4,subrule5))
 #active_rule3 = np.fmax(subrule3, subrule4)
