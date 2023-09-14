@@ -18,6 +18,7 @@ tamano_humedad = np.arange(0.5, 4.1, 0.1)
 tamano_malezas = np.arange(0, 1.1, 0.1)
 tamano_horas = np.arange(0.5 ,4.1, 0.1)
 
+#Funciones de pertenencia
 humedad_mf_baja = fuzz.trapmf(tamano_humedad,[0.5, 0.5, 1.5, 2.5])
 humedad_mf_alta = fuzz.trapmf(tamano_humedad, [1.5, 3, 4, 4])
 
@@ -34,8 +35,7 @@ fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, figsize=(8, 9))
 # value_x = -8
 # value_x = 5
 value_humedad = 1.87
-value_malotes = 0.434
-
+value_malezas = 0.434
 
 ax0.plot(tamano_humedad, humedad_mf_baja, 'b', linewidth=1.5, label='Baja')
 ax0.plot(tamano_humedad, humedad_mf_alta, 'g', linewidth=1.5, label='Alta')
@@ -53,37 +53,26 @@ ax2.plot(tamano_horas, horas_mf_muchas, 'b', linewidth=1.5, label='Muchas')
 ax2.set_title('Horas')
 ax2.legend()
 
-# INFERENCE
-
-# We need the activation of our fuzzy membership functions at these values.
-# The exact values 6.5 and 9.8 do not exist on our universes...
-# This is what fuzz.interp_membership exists for!
+# Fuzzification
+#Grado de verdad del antecedente
 
 humedad_baja = fuzz.interp_membership(tamano_humedad, humedad_mf_baja, value_humedad)
 humedad_alta = fuzz.interp_membership(tamano_humedad, humedad_mf_alta, value_humedad)
 
-malezas_esc = fuzz.interp_membership(tamano_malezas, maleza_mf_esc, value_malotes)
-malezas_ab = fuzz.interp_membership(tamano_malezas, maleza_mf_ab, value_malotes)
+malezas_esc = fuzz.interp_membership(tamano_malezas, maleza_mf_esc, value_malezas)
+malezas_ab = fuzz.interp_membership(tamano_malezas, maleza_mf_ab, value_malezas)
 
-# Rule 1 
+# Reglas de inferencia
+   
+# R1 --> if Humedad is BAJA and Malezas is ABUNDANTE then Horas is MUCHAS | min 
 horas_muchas = np.fmin(np.fmax(humedad_baja, malezas_ab),horas_mf_muchas)
 
-# Rule 2 
+# R2 --> if Humedad is ALTA and Malezas is ESCASA then Horas is POCAS | min   
 horas_pocas = np.fmin(np.fmin(humedad_alta, malezas_esc),horas_mf_pocas)
-"""
-print("ypeq",y_peq) 
-print("ymed",horas_muchas)
-print("ygrande",y_grande)
-
-
-print(f'X_PEQ = {humedad_baja}')
-print(f'X_MED = {humedad_alta}')
-print(f'X_GRANDE = {x_grande}')"""
 
 # pone un piso para rellenar la funcion truncada
 salida = np.zeros_like(tamano_horas)
 
-# Visualize this
 fig, ax0 = plt.subplots(figsize=(8, 3))
 
 ax0.fill_between(tamano_horas, salida, horas_muchas, facecolor='b', alpha=0.7)

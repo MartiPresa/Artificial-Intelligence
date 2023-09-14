@@ -8,6 +8,7 @@ from skfuzzy import control as ctrl
 from skfuzzy.membership import gaussmf
 from random import choice
 import pandas as pandas
+from sklearn.metrics import mean_squared_error
 
 #ALGORITMO DE CLUSTERING SUSTRACTIVO
 def subclust2(data, Ra, Rb=0, AcceptRatio=0.3, RejectRatio=0.1):
@@ -99,7 +100,7 @@ class fis:
 
         cluster_center = cluster_center[:,:-1] #se queda con todas las columnas menos la ultima
         P = data[:,:-1] # se queda con la primera columna, osea los X
-        #T = data[:,-1]
+        # T = data[:,-1]
         maxValue = np.max(P, axis=0)
         minValue = np.min(P, axis=0)
 
@@ -170,7 +171,7 @@ class fis:
         print(solutions)
         return 0
 
-    def evalfis(self, data):
+    def evalModelo(self, data):
         
         sigma = np.array([(input.maxValue-input.minValue) for input in self.inputs])/np.sqrt(8)
         f = [np.prod(gaussmf(data,cluster,sigma),axis=1) for cluster in self.rules]
@@ -216,12 +217,6 @@ print(f' cantidad de datos total= {len(datos)}')
 datos_test = []
 cant_datos_test = int(len(datos)*0.2)
 
-# print(f'canto')
-# for i in range(int(len(datos)*0,2)):
-#     dato = datos.pop(choice(auxDatos))
-#     datos_test.append(dato) 
-# print(f'DATOS ENTRENAMIENTO = {datos}')
-    
 #Selecciona datos de test al azar
 data_frame = pandas.DataFrame(datos)
 filas_aleatorias = data_frame.sample(n=cant_datos_test)
@@ -245,13 +240,13 @@ data = np.vstack((data_x, data_y)).T # ES NECESARIO? si queda igual que la matri
 fis2 = fis()
 fis2.genfis(data, 1.1)
 #Almacena la regresion lineal en r
-reg = fis2.evalfis(np.vstack(data_x))
+reg = fis2.evalModelo(np.vstack(data_x))
 
-reg,c = subclust2(matriz_datos,1)
+r,c = subclust2(matriz_datos,1)
 
 fig,(ax0, ax1, ax2) = plt.subplots(nrows=3,figsize=(15, 10))
 ax0.set_title('Clustering de los datos')
-ax0.scatter(matriz_datos[:,0],matriz_datos[:,1], c=reg)
+ax0.scatter(matriz_datos[:,0],matriz_datos[:,1], c=r)
 ax0.scatter(c[:,0],c[:,1], marker='X')
 fis2.viewInputs(ax1)
 ax1.set_title('Campanas de Gauss')
@@ -270,9 +265,14 @@ ax2.plot(data_x,reg,linestyle='--')
 #TESTEAMOS CON LOS DATOS DE TEST
 entrada_test = datos_test[:,:-1]
 target_test = datos_test[:,-1]
-salida_test = fis2.evalfis(np.vstack(entrada_test))
-diferencia = salida_test - target_test
-print(f'salida test {salida_test}')
-print(f'targets {target_test}')
-print(f'diferencia {diferencia}')
+# target_train = datos[:,-1]
+
+salida_test = fis2.evalModelo(np.vstack(entrada_test))
+# salida_train = fis2.evalModelo(np.vstack(datos[:,0]))
+
+# mse_train = mean_squared_error(target_train, salida_train)
+mse_test = mean_squared_error(target_test, salida_test)
+
+# print(f'MSE train {mse_train}')
+print(f'MSE test {mse_test}')
 plt.show()
