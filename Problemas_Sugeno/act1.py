@@ -55,6 +55,7 @@ def subclust2(data, Ra, Rb=0, AcceptRatio=0.3, RejectRatio=0.1):
     return labels, centers
 
 def gaussmf(data, mean, sigma):
+    "Calcula el nivel de pertenencia de cada dato a las gaussianas"
     return np.exp(-((data - mean)**2.) / (2 * sigma**2.))
 
 class fisRule:
@@ -73,8 +74,8 @@ class fisInput:
         x = np.linspace(self.minValue,self.maxValue,20)
         plt.figure()
         for m in self.centroids:
-            s = (self.minValue-self.maxValue)/8**0.5
-            y = gaussmf(x,m,s)
+            sigma = (self.minValue-self.maxValue)/8**0.5
+            y = gaussmf(x,m,sigma)
             plt.plot(x,y)
 
 class fis:
@@ -86,13 +87,13 @@ class fis:
     def genfis(self, data, radii):
 
         start_time = time.time()
-        labels, cluster_center = subclust2(data, radii)
+        labels, cluster_center = subclust2(data, radii) # hace clustering
 
         print("--- %s seconds ---" % (time.time() - start_time))
-        n_clusters = len(cluster_center)
+        n_clusters = len(cluster_center)    #numero de clusters
 
-        cluster_center = cluster_center[:,:-1]
-        P = data[:,:-1]
+        cluster_center = cluster_center[:,:-1] #se queda con todas las columnas menos la ultima
+        P = data[:,:-1] # se queda con la primera columna, osea los X
         #T = data[:,-1]
         maxValue = np.max(P, axis=0)
         minValue = np.min(P, axis=0)
@@ -102,43 +103,70 @@ class fis:
         self.entrenar(data)
 
     def entrenar(self, data):
-        P = data[:,:-1]
-        T = data[:,-1]
+        datos_entrada = data[:,:-1] #elimina la ultima columna
+        target = data[:,-1] #se queda con la ultima columna
         #___________________________________________
         # MINIMOS CUADRADOS (lineal)
+        # Calcula los sigmas de cada campana de gauss
         sigma = np.array([(i.maxValue-i.minValue)/np.sqrt(8) for i in self.inputs])
-        f = [np.prod(gaussmf(P,cluster,sigma),axis=1) for cluster in self.rules]
 
-        nivel_acti = np.array(f).T
+      
+        #F contiene un array por cada cluster, que tienen los arrays? ni puta idea
+        f = [np.prod(gaussmf(datos_entrada,cluster,sigma),axis=1) for cluster in self.rules]
+        print(f'valor de F {f}')
+
+        nivel_acti = np.array(f).T #pasa el valor de f traspuesto
+        #quedan los valores de pertenencia a los clusters por columnas
         print("nivel acti")
         print(nivel_acti)
-        sumMu = np.vstack(np.sum(nivel_acti,axis=1))
+        sumMu = np.vstack(np.sum(nivel_acti,axis=1))# por cada dato suma el valor de pertenencia a cada cluster y lo pone en un vector
         print("sumMu")
         print(sumMu)
-        P = np.c_[P, np.ones(len(P))]
-        n_vars = P.shape[1]
 
-        orden = np.tile(np.arange(0,n_vars), len(self.rules))
-        acti = np.tile(nivel_acti,[1,n_vars])
-        inp = P[:, orden]
+        datos_entrada = np.c_[datos_entrada, np.ones(len(datos_entrada))] #Agrega una columna de 1's a la matriz de datos de entrada
+        print(datos_entrada)
+        n_vars = datos_entrada.shape[1] #almacena la cantidad de columnas en la matriz anterior
+        #print(f'SHAPE DATOS {datos_entrada.shape}')
 
+        #n_vars = 2
+        # np.arange(0,n_vars) = [0,1]
+        #tile repite lo que haya en el primer parametro, la cantidad de veces indicada en
+        #el segundo parametro. En este caso escribe [0 1 0 1 0 1]
+        orden = np.tile(np.arange(0,n_vars), len(self.rules)) 
+        
+        #En este caso, como el segundo parametro es [1,n_vars], devuelve un array que contiene
+        #un array con la cantidad de elementos repetidos n_vars veces. 
+        acti = np.tile(nivel_acti,[1,n_vars]) 
+        inp = datos_entrada[:, orden]
+        #Estos ultimos 2 pasos amplian las matrices a 6 columnas
+        print(f'acti {acti}')
+        print(f'inp{inp}')
 
-        A = acti*inp/sumMu
+        #Hace una especie de agregacion entre todas las reglas (Suavizar rectas)
+        A = acti*inp/sumMu # hace una especie de promedio pesado CREO
+        #acti: valor de pertenencia
+        #inp: valor de la mf en un valor x 
+        #sumMu: suma de los valores de pertenencia
+        
+       
 
+        print(f'VALOR DE A {A}')
         # A = np.zeros((N, 2*n_clusters))
         # for jdx in range(n_clusters):
         #     for kdx in range(nVar):
         #         A[:, jdx+kdx] = nivel_acti[:,jdx]*P[:,kdx]/sumMu
         #         A[:, jdx+kdx+1] = nivel_acti[:,jdx]/sumMu
 
-        b = T
+        b = target
 
+        #CUADRADOS MINIMOS --> lstsq 
         solutions, residuals, rank, s = np.linalg.lstsq(A,b,rcond=None)
         self.solutions = solutions #.reshape(n_clusters,n_vars)
         print(solutions)
         return 0
 
     def evalfis(self, data):
+        
         sigma = np.array([(input.maxValue-input.minValue) for input in self.inputs])/np.sqrt(8)
         f = [np.prod(gaussmf(data,cluster,sigma),axis=1) for cluster in self.rules]
         nivel_acti = np.array(f).T
@@ -232,7 +260,7 @@ plt.plot(data_x, data_y)
 # plt.ylim(-20,20)
 plt.xlim(-7,7)
 
-data = np.vstack((data_x, data_y)).T
+data = np.vstack((data_x, data_y)).T # ES NECESARIO? si queda igual que la matriz
 fis2 = fis()
 fis2.genfis(data, 1.1)
 fis2.viewInputs()
