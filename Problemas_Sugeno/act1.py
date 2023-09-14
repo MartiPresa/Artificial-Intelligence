@@ -6,6 +6,8 @@ from scipy.spatial import distance_matrix
 import time
 from skfuzzy import control as ctrl
 from skfuzzy.membership import gaussmf
+from random import choice
+import pandas as pandas
 
 #ALGORITMO DE CLUSTERING SUSTRACTIVO
 def subclust2(data, Ra, Rb=0, AcceptRatio=0.3, RejectRatio=0.1):
@@ -70,14 +72,17 @@ class fisInput:
         self.centroids = centroids
 
 
-    def view(self):
+    def view(self, ax):
         x = np.linspace(self.minValue,self.maxValue,20)
-        plt.figure()
+        #plt.figure()
+        #gauss = []
         for m in self.centroids:
             sigma = (self.minValue-self.maxValue)/8**0.5
             y = gaussmf(x,m,sigma)
-            plt.plot(x,y)
-
+            ax.plot(x,y)
+            #gauss.append((x,y))
+        #return gauss
+    
 class fis:
     def __init__(self):
         self.rules=[]
@@ -160,7 +165,7 @@ class fis:
         b = target
 
         #CUADRADOS MINIMOS --> lstsq 
-        solutions, residuals, rank, s = np.linalg.lstsq(A,b,rcond=None)
+        solutions, residuals, rank, s = np.linalg.lstsq(A,b,rcond=None) #solutions es el mse CREO
         self.solutions = solutions #.reshape(n_clusters,n_vars)
         print(solutions)
         return 0
@@ -185,11 +190,14 @@ class fis:
         return np.sum(acti*inp*coef/sumMu,axis=1)
 
 
-    def viewInputs(self):
+    def viewInputs(self, ax):
+        gaussianas = []
         for input in self.inputs:
-            input.view()
+            gaussianas.append(input.view(ax))
+        return gaussianas
 
-path ='4to/Inteligencia Artificial/Practica/Artificial-Intelligence/Problemas_Sugeno/diodo.txt'
+# path ='4to/Inteligencia Artificial/Practica/Artificial-Intelligence/Problemas_Sugeno/diodo.txt'
+path ='diodo.txt'
 datos = []
 # Abre el archivo y lee los datos
 with open(path, "r") as file:
@@ -202,84 +210,69 @@ with open(path, "r") as file:
         datos.append(valores)
 
 # Convierte la lista de datos en una matriz NumPy
+auxDatos = datos[:]
+print(f' TODOS LOS DATOS = {datos}')
+print(f' cantidad de datos total= {len(datos)}')
+datos_test = []
+cant_datos_test = int(len(datos)*0.2)
+
+# print(f'canto')
+# for i in range(int(len(datos)*0,2)):
+#     dato = datos.pop(choice(auxDatos))
+#     datos_test.append(dato) 
+# print(f'DATOS ENTRENAMIENTO = {datos}')
+    
+#Selecciona datos de test al azar
+data_frame = pandas.DataFrame(datos)
+filas_aleatorias = data_frame.sample(n=cant_datos_test)
+datos_test = filas_aleatorias.values
+
+datos = []
+[datos.append(x) for x in auxDatos if x not in datos_test]
+print(f'DATOS = {datos}')
+print(f' cantidad de datos entrenamiento= {len(datos)}')
+
 matriz_datos = np.array(datos)
 
-# x=np.linspace(-10,10,50)
-# X,Y = np.meshgrid(x,x)
-# Z = X**2+Y**2
-
-# data = np.vstack((X.ravel(), Y.ravel(), Z.ravel())).T
-
-# fis3 = fis()
-# fis3.genfis(data,1.2)
-# fis3.viewInputs()
-
-# r = fis3.evalfis(np.vstack((X.ravel(), Y.ravel())).T)
-# r = np.reshape(r, X.shape)
-# Usar esos datos para generar X, Y y Z
-"""
-X = matriz_datos[:, 0]
-Y = matriz_datos[:, 1]
-# Z = matriz_datos[:, 2]
-
-# Crear una matriz 2D de X y Y utilizando meshgrid
-X, Y = np.meshgrid(X, Y)
-
-# Crear un objeto FIS (Sistema de Inferencia Fuzzy)
-fis3 = ctrl.Antecedent(np.vstack((X.ravel(), Y.ravel())), 'input')
-fis3['input'] = fis3.universe
-
-# Definir una función de membresía gaussiana para 'input'
-media = np.mean(np.vstack((X.ravel(), Y.ravel())), axis=1)
-desviacion_estandar = np.std(np.vstack((X.ravel(), Y.ravel())), axis=1)
-fis3['input'] = gaussmf(fis3.universe, media, desviacion_estandar)
-
-# Crear reglas y definir la lógica difusa como lo haces en tu código original
-
-# Evaluar el FIS
-r = fis3.defuzzify(np.vstack((X.ravel(), Y.ravel())).T)
-r = np.reshape(r, X.shape)
-
-
-fig = plt.figure()
-ax = fig.add_subplot(projection = '3d') #fig.gca(projection='3d')
-surf = ax.plot_surface(X,Y,Z, cmap=cm.Blues,
-                        linewidth=0, antialiased=False, alpha=0.3)
-
-surf = ax.plot_surface(X,Y, r, cmap=cm.Reds,
-                        linewidth=0, antialiased=False, alpha=0.8)
-"""
-
-def my_exponential(A, B, C, x):
-    return A*np.exp(-B*x)+C
-
-data_x = matriz_datos[:,0]
+data_x = matriz_datos[:,0] 
 data_y = matriz_datos[:,1]
 
-plt.plot(data_x, data_y)
+#plt.plot(data_x, data_y)
 # plt.ylim(-20,20)
-plt.xlim(-7,7)
+# plt.xlim(-7,7)
 
 data = np.vstack((data_x, data_y)).T # ES NECESARIO? si queda igual que la matriz
 fis2 = fis()
 fis2.genfis(data, 1.1)
-fis2.viewInputs()
-r = fis2.evalfis(np.vstack(data_x))
+#Almacena la regresion lineal en r
+reg = fis2.evalfis(np.vstack(data_x))
 
-plt.figure()
-plt.plot(data_x,data_y)
-plt.plot(data_x,r,linestyle='--')
+reg,c = subclust2(matriz_datos,1)
+
+fig,(ax0, ax1, ax2) = plt.subplots(nrows=3,figsize=(15, 10))
+ax0.set_title('Clustering de los datos')
+ax0.scatter(matriz_datos[:,0],matriz_datos[:,1], c=reg)
+ax0.scatter(c[:,0],c[:,1], marker='X')
+fis2.viewInputs(ax1)
+ax1.set_title('Campanas de Gauss')
+ax2.set_title('Rectas?')
+ax2.plot(data_x,data_y)
+ax2.plot(data_x,reg,linestyle='--')
 
 #print(f'SOLUCIONES {fis2.solutions}')
-print(f'REGLAS {fis2.rules}')
+#print(f'REGLAS {fis2.rules}')
 
-r,c = subclust2(matriz_datos,1)
-plt.figure()
-plt.scatter(matriz_datos[:,0],matriz_datos[:,1], c=r)
-plt.scatter(c[:,0],c[:,1], marker='X')
-plt.show()
 
+#plt.figure()
+# plt.show()
 #fis3.rules
 
-
+#TESTEAMOS CON LOS DATOS DE TEST
+entrada_test = datos_test[:,:-1]
+target_test = datos_test[:,-1]
+salida_test = fis2.evalfis(np.vstack(entrada_test))
+diferencia = salida_test - target_test
+print(f'salida test {salida_test}')
+print(f'targets {target_test}')
+print(f'diferencia {diferencia}')
 plt.show()
