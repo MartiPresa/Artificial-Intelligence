@@ -5,60 +5,15 @@ from sklearn.preprocessing import MinMaxScaler
 from scipy.spatial import distance_matrix
 import time
 from skfuzzy import control as ctrl
-from skfuzzy.membership import gaussmf
+# from skfuzzy.membership import gaussmf
 from random import choice
 import pandas as pandas
 from sklearn.metrics import mean_squared_error
+import clusteringSustractivo as cl
 
-#ALGORITMO DE CLUSTERING SUSTRACTIVO
-def subclust2(data, Ra, Rb=0, AcceptRatio=0.3, RejectRatio=0.1):
-    if Rb==0:
-        Rb = Ra*1.15
-    
-    scaler = MinMaxScaler()
-    scaler.fit(data)
-    ndata = scaler.transform(data)
 
-    P = distance_matrix(ndata,ndata)
-    alpha=(Ra/2)**2
-    P = np.sum(np.exp(-P**2/alpha),axis=0)
-
-    centers = []
-    i=np.argmax(P)
-    C = ndata[i]
-    p=P[i]
-    centers = [C]
-
-    continuar=True
-    restarP = True
-    while continuar:
-        pAnt = p
-        if restarP:
-            P=P-p*np.array([np.exp(-np.linalg.norm(v-C)**2/(Rb/2)**2) for v in ndata])
-        restarP = True
-        i=np.argmax(P)
-        C = ndata[i]
-        p=P[i]
-        if p>AcceptRatio*pAnt:
-            centers = np.vstack((centers,C))
-        elif p<RejectRatio*pAnt:
-            continuar=False
-        else:
-            dr = np.min([np.linalg.norm(v-C) for v in centers])
-            if dr/Ra+p/pAnt>=1:
-                centers = np.vstack((centers,C))
-            else:
-                P[i]=0
-                restarP = False
-        if not any(v>0 for v in P):
-            continuar = False
-    distancias = [[np.linalg.norm(p-c) for p in ndata] for c in centers]
-    labels = np.argmin(distancias, axis=0)
-    centers = scaler.inverse_transform(centers)
-    return labels, centers
-
+# Calcula el nivel de pertenencia de cada dato a las gaussianas
 def gaussmf(data, mean, sigma):
-    "Calcula el nivel de pertenencia de cada dato a las gaussianas"
     return np.exp(-((data - mean)**2.) / (2 * sigma**2.))
 
 class fisRule:
@@ -72,19 +27,15 @@ class fisInput:
         self.maxValue = max
         self.centroids = centroids
 
-
     def view(self, ax):
         x = np.linspace(self.minValue,self.maxValue,20)
-        #plt.figure()
-        #gauss = []
+
         for m in self.centroids:
             sigma = (self.minValue-self.maxValue)/8**0.5
             y = gaussmf(x,m,sigma)
             ax.plot(x,y)
-            #gauss.append((x,y))
-        #return gauss
     
-class fis:
+class fis_Sugeno:
     def __init__(self):
         self.rules=[]
         self.memberfunc = []
@@ -93,8 +44,7 @@ class fis:
     def genfis(self, data, radii):
 
         start_time = time.time()
-        labels, cluster_center = subclust2(data, radii) # hace clustering
-
+        labels, cluster_center = cl.clustering_sustractivo(data, radii) # hace clustering
         print("--- %s seconds ---" % (time.time() - start_time))
         n_clusters = len(cluster_center)    #numero de clusters
 
@@ -106,9 +56,9 @@ class fis:
 
         self.inputs = [fisInput(maxValue[i], minValue[i],cluster_center[:,i]) for i in range(len(maxValue))]
         self.rules = cluster_center
-        self.entrenar(data)
+        self.training(data)
 
-    def entrenar(self, data):
+    def training(self, data):
         datos_entrada = data[:,:-1] #elimina la ultima columna
         target = data[:,-1] #se queda con la ultima columna
         #___________________________________________
@@ -116,7 +66,6 @@ class fis:
         # Calcula los sigmas de cada campana de gauss
         sigma = np.array([(i.maxValue-i.minValue)/np.sqrt(8) for i in self.inputs])
 
-      
         #F contiene un array por cada cluster, que tienen los arrays? ni puta idea
         f = [np.prod(gaussmf(datos_entrada,cluster,sigma),axis=1) for cluster in self.rules]
         print(f'valor de F {f}')
@@ -197,62 +146,84 @@ class fis:
             gaussianas.append(input.view(ax))
         return gaussianas
 
-# path ='4to/Inteligencia Artificial/Practica/Artificial-Intelligence/Problemas_Sugeno/diodo.txt'
-path ='diodo.txt'
-datos = []
-# Abre el archivo y lee los datos
-with open(path, "r") as file:
-    for linea in file:
-        # Divide cada línea en dos valores utilizando el separador (tabulación o espacio)
-        valores = linea.strip().split('\t')  
-        # Convierte los valores de cadena a números de punto flotante
-        valores = [float(valor) for valor in valores]
-        # Agrega los valores a la lista de datos
-        datos.append(valores)
+def eleccion_datos(path):
+    datos = []
+    # Abre el archivo y lee los datos
+    with open(path, "r") as file:
+        for linea in file:
+            # Divide cada línea en dos valores utilizando el separador (tabulación o espacio)
+            valores = linea.strip().split('\t')  
+            # Convierte los valores de cadena a números de punto flotante
+            valores = [float(valor) for valor in valores]
+            # Agrega los valores a la lista de datos
+            datos.append(valores)
 
-# Convierte la lista de datos en una matriz NumPy
-auxDatos = datos[:]
-print(f' TODOS LOS DATOS = {datos}')
-print(f' cantidad de datos total= {len(datos)}')
-datos_test = []
-cant_datos_test = int(len(datos)*0.2)
+    # Convierte la lista de datos en una matriz NumPy
+    auxDatos = datos[:]
+    # print(f' TODOS LOS DATOS = {datos}')
+    # print(f' cantidad de datos total= {len(datos)}')
+    datos_test = []
+    cant_datos_test = int(len(datos)*0.2)
 
-#Selecciona datos de test al azar
-data_frame = pandas.DataFrame(datos)
-filas_aleatorias = data_frame.sample(n=cant_datos_test)
-datos_test = filas_aleatorias.values
+    #Selecciona datos de test al azar
+    data_frame = pandas.DataFrame(datos)
+    filas_aleatorias = data_frame.sample(n=cant_datos_test)
+    datos_test = filas_aleatorias.values
 
-datos = []
-[datos.append(x) for x in auxDatos if x not in datos_test]
-print(f'DATOS = {datos}')
-print(f' cantidad de datos entrenamiento= {len(datos)}')
+    datos_training = []
+    [datos_training.append(x) for x in auxDatos if x not in datos_test]
+    # print(f'DATOS = {datos_training}')
+    # print(f' cantidad de datos entrenamiento= {len(datos_training)}')
 
-matriz_datos = np.array(datos)
+    return np.array(datos_training),np.array(datos_test)
 
-data_x = matriz_datos[:,0] 
-data_y = matriz_datos[:,1]
+def mse(training_data,test_data):
+    #TESTEAMOS CON LOS DATOS DE TEST
+    entrada_test = test_data[:,:-1]
+    target_test = test_data[:,-1]
+    target_train = training_data[:,-1]
+    salida_test = Sugeno.evalModelo(np.vstack(entrada_test))
+    salida_train = Sugeno.evalModelo(np.vstack(training_data[:,0]))
+    mse_train = mean_squared_error(target_train, salida_train)
+    mse_test = mean_squared_error(target_test, salida_test)
+    return mse_train,mse_test
+
+def muestra(training_data,testing_data):
+    fig,(ax0, ax1, ax2) = plt.subplots(nrows=3,figsize=(15, 10))
+    ax0.set_title('Clustering de los datos')
+    ax0.scatter(training_data[:,0],training_data[:,1], c=r)
+    ax0.scatter(c[:,0],c[:,1], marker='X')
+    Sugeno.viewInputs(ax1)
+    ax1.set_title('Campanas de Gauss')
+    ax2.set_title('Rectas?')
+    ax2.plot(data_x,data_y)
+    ax2.plot(data_x,reg,linestyle='--')
+    plt.show()
+
+#------------------------------MAIN-------------------------------------------
+
+# Lectura de los datos, y selecciona cuales son para training y cuales para test
+path ='Problemas_Sugeno/diodo.txt'
+training_data = []
+test_data = [] 
+training_data, test_data = eleccion_datos(path)
+
+data_x = training_data[:,0] 
+data_y = training_data[:,1]
 
 #plt.plot(data_x, data_y)
 # plt.ylim(-20,20)
 # plt.xlim(-7,7)
 
-data = np.vstack((data_x, data_y)).T # ES NECESARIO? si queda igual que la matriz
-fis2 = fis()
-fis2.genfis(data, 1.1)
+# data = np.vstack((data_x, data_y)).T # ES NECESARIO? si queda igual que la matriz
+Sugeno = fis_Sugeno()
+Sugeno.genfis(training_data, 1.1)
 #Almacena la regresion lineal en r
-reg = fis2.evalModelo(np.vstack(data_x))
+reg = Sugeno.evalModelo(np.vstack(data_x))
 
-r,c = subclust2(matriz_datos,1)
+# r,c = clustering_sustractivo(matriz_datos,1)
+r,c = cl.clustering_sustractivo(training_data,1)
 
-fig,(ax0, ax1, ax2) = plt.subplots(nrows=3,figsize=(15, 10))
-ax0.set_title('Clustering de los datos')
-ax0.scatter(matriz_datos[:,0],matriz_datos[:,1], c=r)
-ax0.scatter(c[:,0],c[:,1], marker='X')
-fis2.viewInputs(ax1)
-ax1.set_title('Campanas de Gauss')
-ax2.set_title('Rectas?')
-ax2.plot(data_x,data_y)
-ax2.plot(data_x,reg,linestyle='--')
 
 #print(f'SOLUCIONES {fis2.solutions}')
 #print(f'REGLAS {fis2.rules}')
@@ -262,17 +233,9 @@ ax2.plot(data_x,reg,linestyle='--')
 # plt.show()
 #fis3.rules
 
-#TESTEAMOS CON LOS DATOS DE TEST
-entrada_test = datos_test[:,:-1]
-target_test = datos_test[:,-1]
-# target_train = datos[:,-1]
-
-salida_test = fis2.evalModelo(np.vstack(entrada_test))
-# salida_train = fis2.evalModelo(np.vstack(datos[:,0]))
-
-# mse_train = mean_squared_error(target_train, salida_train)
-mse_test = mean_squared_error(target_test, salida_test)
-
 # print(f'MSE train {mse_train}')
-print(f'MSE test {mse_test}')
-plt.show()
+x,y = mse(training_data,test_data)
+print(f'MSE test {y}')
+print(f'MSE training {x}')
+
+muestra()
