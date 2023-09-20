@@ -198,6 +198,7 @@ def muestra(training_data,testing_data):
     ax2.set_title('Rectas?')
     ax2.plot(data_x,data_y)
     ax2.plot(data_x,reg,linestyle='--')
+    
     plt.show()
 
 #------------------------------MAIN-------------------------------------------
