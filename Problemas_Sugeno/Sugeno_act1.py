@@ -27,6 +27,10 @@ class fisInput:
         self.maxValue = max
         self.centroids = centroids
 
+    def getCentroids(self):
+        return self.centroids
+    
+
     def view(self, ax):
         x = np.linspace(self.minValue,self.maxValue,20)
 
@@ -40,11 +44,23 @@ class fis_Sugeno:
         self.rules=[]
         self.memberfunc = []
         self.inputs = []
+        self.clusters = []
+        self.labels = []
 
+    def getLabels(self):
+        return self.labels
+    
+    def getClusters(self):
+        return self.clusters
+    
+    # def clusteringSustractivo(datos, r):
+    #     return cl.clustering_sustractivo(datos,r)
+    
     def genfis(self, data, radii):
 
         start_time = time.time()
-        labels, cluster_center = cl.clustering_sustractivo(data, radii) # hace clustering
+        self.labels, self.clusters = cl.clustering_sustractivo(data, radii) # hace clustering
+        cluster_center = self.clusters
         print("--- %s seconds ---" % (time.time() - start_time))
         n_clusters = len(cluster_center)    #numero de clusters
 
@@ -55,6 +71,7 @@ class fis_Sugeno:
         minValue = np.min(P, axis=0)
 
         self.inputs = [fisInput(maxValue[i], minValue[i],cluster_center[:,i]) for i in range(len(maxValue))]
+        
         self.rules = cluster_center
         self.training(data)
 
@@ -198,13 +215,16 @@ def muestra(training_data,testing_data):
     ax2.set_title('Rectas?')
     ax2.plot(data_x,data_y)
     ax2.plot(data_x,reg,linestyle='--')
-    
+    ax2.scatter(testing_data[:,0],testing_data[:,1], c='green') # muestro los datos de test para ver cuanto error hay con el modelo
+    # ax0.scatter(c[:,0],c[:,1], marker='X')
     plt.show()
 
 #------------------------------MAIN-------------------------------------------
 
 # Lectura de los datos, y selecciona cuales son para training y cuales para test
 path ='Problemas_Sugeno/diodo.txt'
+
+
 training_data = []
 test_data = [] 
 training_data, test_data = eleccion_datos(path)
@@ -222,9 +242,8 @@ Sugeno.genfis(training_data, 1.1)
 #Almacena la regresion lineal en r
 reg = Sugeno.evalModelo(np.vstack(data_x))
 
-# r,c = clustering_sustractivo(matriz_datos,1)
 r,c = cl.clustering_sustractivo(training_data,1)
-
+# r,c = Sugeno.clusteringSustractivo(training_data,1)
 
 #print(f'SOLUCIONES {fis2.solutions}')
 #print(f'REGLAS {fis2.rules}')
@@ -239,4 +258,4 @@ x,y = mse(training_data,test_data)
 print(f'MSE test {y}')
 print(f'MSE training {x}')
 
-muestra()
+muestra(training_data,test_data)
