@@ -48,12 +48,12 @@ def seleccion_padres(cant_padres, poblacion, fitness):
         padres.append(np.random.choice(poblacion,p=probabilidad))
     return padres
 
-def mejores_individuos(cant_individuos, fitness):
-    mejores = []
-    while(len(mejores) < cant_individuos):
-        maximo = fitness.pop(max(fitness))
-        mejores.append(maximo)
-    return mejores
+# def mejores_individuos(cant_individuos, fitness):
+#     mejores = []
+#     while(len(mejores) < cant_individuos):
+        ## maximo = fitness.pop(max(fitness)) esto tira error
+#         mejores.append(maximo)
+#     return mejores
 
 def generarHijos(padres, cromosomas, cant_hijos, puntos_cruce):
     crossover = []
