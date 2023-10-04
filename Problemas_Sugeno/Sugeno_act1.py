@@ -61,7 +61,8 @@ class fis_Sugeno:
         start_time = time.time()
         self.labels, self.clusters = cl.clustering_sustractivo(data, radii) # hace clustering
         cluster_center = self.clusters
-        print("--- %s seconds ---" % (time.time() - start_time))
+        #print(f'CLUSTERS = {self.clusters}')
+        #print("--- %s seconds ---" % (time.time() - start_time))
         n_clusters = len(cluster_center)    #numero de clusters
 
         cluster_center = cluster_center[:,:-1] #se queda con todas las columnas menos la ultima
@@ -71,7 +72,7 @@ class fis_Sugeno:
         minValue = np.min(P, axis=0)
 
         self.inputs = [fisInput(maxValue[i], minValue[i],cluster_center[:,i]) for i in range(len(maxValue))]
-        
+        #print(f'INPUTS = {self.inputs}')
         self.rules = cluster_center
         self.training(data)
 
@@ -222,7 +223,7 @@ def muestra(training_data,testing_data):
 #------------------------------MAIN-------------------------------------------
 
 # Lectura de los datos, y selecciona cuales son para training y cuales para test
-path ='Problemas_Sugeno/diodo.txt'
+path ='D:/Backup/Facultad/4to/Inteligencia Artificial/Practica/Artificial-Intelligence/Problemas_Sugeno/diodo.txt'
 
 
 training_data = []
