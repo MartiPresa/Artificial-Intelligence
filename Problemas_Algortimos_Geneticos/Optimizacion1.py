@@ -35,9 +35,12 @@ def calculo_fitness_N(poblacion):
         x.append(fitness(individuo))
     return np.array(x)
 
-def normalizacion(mat):
+def normalizacion(mat): #probabilidad de seleccion
     suma = np.sum(mat)
     return mat/suma
+
+def mejor_individuo(mat):
+    return np.max(mat)
 
 def seleccion_padres(cant_padres, poblacion, fitness):
     #Roulette
@@ -69,6 +72,7 @@ print(poblacion)
 print(f'cromosomas {cromosomas}')
 fitness = calculo_fitness_N(poblacion)
 print(fitness)
+print(f'Mejor individuo: {mejor_individuo(fitness)}')
 padres = []
 padres = seleccion_padres(cant_padres,poblacion,fitness)
 print(f'Padres {padres}')
