@@ -101,14 +101,35 @@ np.set_printoptions(precision=3)
 
 
 # Evaluador SIMPLE
-def evaluar_modelo_simple(dataX,dataY,modelo,estadoaleatorio=1,epocas=10):
-	scores, histories= list(),list()
-	model = modelo()
-	history = model.fit(trainX, trainY, epochs=epocas, batch_size=32, validation_data=(testX, testY), verbose=1)
-	_, acc = model.evaluate(testX, testY, verbose=1)
-	print('> %.3f' % (acc * 100.0))
-	scores.append(acc)
-	histories.append(history)
+# def evaluar_modelo_simple(dataX,dataY,modelo,estadoaleatorio=1,epocas=10):
+# 	scores, histories= list(),list()
+# 	model = modelo()
+# 	history = model.fit(trainX, trainY, epochs=epocas, batch_size=32, validation_data=(testX, testY), verbose=1)
+# 	_, acc = model.evaluate(testX, testY, verbose=1)
+# 	print('> %.3f' % (acc * 100.0))
+# 	scores.append(acc)
+# 	histories.append(history)
+# 	return scores, histories, model
+
+# Evaluación con k-fold cross-validation
+def evaluar_modelo_kfold(dataX, dataY, modelo, n_folds=5, estadoaleatorio=1):
+	scores, histories = list(), list()
+	# preparar los k-fold
+	kfold = KFold(n_folds, shuffle=True, random_state=estadoaleatorio)
+	# Enumerar las divisiones
+	for train_ix, test_ix in kfold.split(dataX):
+		# definir model
+		model = modelo()
+		# elegir filas para train y validation
+		trainX, trainY, testX, testY = dataX[train_ix], dataY[train_ix], dataX[test_ix], dataY[test_ix]
+		# fitear modelo
+		history = model.fit(trainX, trainY, epochs=10, batch_size=32, validation_data=(testX, testY), verbose=0)
+		# evaluar modelo
+		_, acc = model.evaluate(testX, testY, verbose=0)
+		print('> %.3f' % (acc * 100.0))
+		# guardar puntajes
+		scores.append(acc)
+		histories.append(history)
 	return scores, histories, model
 
 # Graficar diagnósticos
@@ -174,14 +195,15 @@ plt.rcParams['figure.figsize'] = [3, 3]
 def red_simple():
     model = Sequential() # keras. Agrupa un conjunto de layers dentro de un modelo
     model.add(Flatten()) # Las imágenes son de 28x28, matriciales. Necesitamos achatarlas i.e. 28x28 -> 784 entradas!
-    model.add(Dense(10,activation="sigmoid"))  # UNA capa oculta con una sola neuronita. Activación más básica que encontramos: Sigmoide.  
+    model.add(Dense(1,activation="relu"))  # UNA capa oculta con una sola neuronita. Activación más básica que encontramos: Sigmoide.  
     model.add(Dense(10, activation='softmax')) # Estamos armando un clasificador... la capa de salida debe ser softmax
     opt = keras.optimizers.SGD(learning_rate=0.01) # Descenso por gradiente. El optimizador más simple. Probar cambiar el opt por ADAM
-    model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy']) #Compilamos las capas secuenciales.
+    model.compile(optimizer = 'adam', loss='categorical_crossentropy', metrics=['accuracy']) #Compilamos las capas secuenciales.
     return model
 
 
-scores, histories, entrenado = evaluar_modelo_simple(trainX, trainY, red_simple)
+# scores, histories, entrenado = evaluar_modelo_simple(trainX, trainY, red_simple)
+scores, histories, entrenado = evaluar_modelo_kfold(trainX, trainY, red_simple)
 
 # Grafiquemos cómo fue entrenando:
 plt.rcParams['figure.figsize'] = [8, 8]
