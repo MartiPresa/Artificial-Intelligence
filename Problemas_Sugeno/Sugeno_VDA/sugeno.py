@@ -5,15 +5,16 @@ from sklearn.preprocessing import MinMaxScaler
 from scipy.spatial import distance_matrix
 import time
 from sklearn.model_selection import train_test_split
-from skfuzzy import control as ctrl
+# from skfuzzy import control as ctrl
 from random import choice
 import pandas as pandas
 from sklearn.metrics import mean_squared_error
 # import Sugeno_act1 as sugeno
-# import clusteringSustractivo as cl
+import clusteringSustractivo as cl
 
 # ruta del archivo de datos
-path = 'C:/Users/marti/OneDrive/Documentos/GitHub/Artificial-Intelligence/Problemas_Sugeno/Sugeno_VDA/samplesVDA1.txt'
+path= '/Users/valentina/Documents/GitHub/Artificial-Intelligence/Problemas_Sugeno/Sugeno_VDA/samplesVDA1.txt'
+# path = 'C:/Users/marti/OneDrive/Documentos/GitHub/Artificial-Intelligence/Problemas_Sugeno/Sugeno_VDA/samplesVDA1.txt'
 
 def eleccion_datos(datos):
     # X = np.array(datos)
@@ -70,11 +71,20 @@ def muestra(auxDatos):
     plt.show()  # Mostrar el gráfico
 
 datos = lee_arch(path)
-muestra(datos)
+# muestra(datos)
 
 training_data = []
 test_data = [] 
 training_data, test_data = eleccion_datos(datos)
-print(training_data)
-# data_x = training_data[:,0] 
-# data_y = training_data[:,1] 
+# print(training_data)
+data_x = training_data[:,0] 
+# print(data_x)
+data_y = training_data[:,1]
+
+# hago clustering 
+r, c = cl.clustering_sustractivo(training_data,1)
+
+plt.figure()
+plt.scatter(training_data[:,0],training_data[:,1], c=r)
+plt.scatter(c[:,0],c[:,1], marker='X')
+plt.show()
