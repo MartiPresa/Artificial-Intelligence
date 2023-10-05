@@ -195,7 +195,9 @@ plt.rcParams['figure.figsize'] = [3, 3]
 def red_simple():
     model = Sequential() # keras. Agrupa un conjunto de layers dentro de un modelo
     model.add(Flatten()) # Las imágenes son de 28x28, matriciales. Necesitamos achatarlas i.e. 28x28 -> 784 entradas!
-    model.add(Dense(1,activation="relu"))  # UNA capa oculta con una sola neuronita. Activación más básica que encontramos: Sigmoide.  
+    model.add(Dense(41,activation="sigmoid"))  # UNA capa oculta con una sola neuronita. Activación más básica que encontramos: Sigmoide.  
+    model.add(Dense(40,activation="tanh"))
+
     model.add(Dense(10, activation='softmax')) # Estamos armando un clasificador... la capa de salida debe ser softmax
     opt = keras.optimizers.SGD(learning_rate=0.01) # Descenso por gradiente. El optimizador más simple. Probar cambiar el opt por ADAM
     model.compile(optimizer = 'adam', loss='categorical_crossentropy', metrics=['accuracy']) #Compilamos las capas secuenciales.

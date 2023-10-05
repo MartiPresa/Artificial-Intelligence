@@ -164,18 +164,23 @@ class fis_Sugeno:
             gaussianas.append(input.view(ax))
         return gaussianas
 
-def eleccion_datos(path):
+def lee_arch(path):
     datos = []
     # Abre el archivo y lee los datos
     with open(path, "r") as file:
+        valorx = 0
         for linea in file:
-            # Divide cada línea en dos valores utilizando el separador (tabulación o espacio)
-            valores = linea.strip().split('\t')  
             # Convierte los valores de cadena a números de punto flotante
-            valores = [float(valor) for valor in valores]
+            valory = float(linea.strip())
             # Agrega los valores a la lista de datos
-            datos.append(valores)
+            datos.append([valorx, valory])
+            valorx = valorx+2.5
 
+    # Convierte la lista de datos en una matriz NumPy
+    auxDatos = np.array(datos)
+    return auxDatos
+    
+def eleccion_datos(datos):
     # Convierte la lista de datos en una matriz NumPy
     auxDatos = datos[:]
     # print(f' TODOS LOS DATOS = {datos}')
@@ -231,7 +236,7 @@ test_data = []
 training_data, test_data = eleccion_datos(path)
 
 data_x = training_data[:,0] 
-data_y = training_data[:,1]
+data_y = training_data[:,1] # target
 
 #plt.plot(data_x, data_y)
 # plt.ylim(-20,20)
