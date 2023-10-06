@@ -94,8 +94,6 @@ plt.show()
 """
 Created on Wed May  6 17:56:16 2020
 
-@author: Daniel Albornoz
-
 Implementación similar a genfis2 de Matlab.
 Sugeno type FIS. Generado a partir de clustering substractivo.
 
@@ -179,16 +177,10 @@ class fis:
 
         A = acti*inp/sumMu
 
-        # A = np.zeros((N, 2*n_clusters))
-        # for jdx in range(n_clusters):
-        #     for kdx in range(nVar):
-        #         A[:, jdx+kdx] = nivel_acti[:,jdx]*P[:,kdx]/sumMu
-        #         A[:, jdx+kdx+1] = nivel_acti[:,jdx]/sumMu
-
         b = T
 
         solutions, residuals, rank, s = np.linalg.lstsq(A,b,rcond=None)
-        self.solutions = solutions #.reshape(n_clusters,n_vars)
+        self.solutions = solutions 
         print(solutions)
         return 0
 
@@ -216,14 +208,7 @@ class fis:
             input.view()
 
 
-
 # ------------------------------------------------------TEST GEN FIS 1 ed------------------------------------------------------
-def my_exponential(A, B, C, x):
-    return A*np.exp(-B*x)+C
-
-# data_x = np.arange(-10,10,0.1)
-# data_y = -0.5*data_x**3-0.6*data_x**2+10*data_x+1 #my_exponential(9, 0.5,1, data_x)
-
 plt.plot(data_x, data_y)
 # plt.ylim(-20,20)
 # plt.xlim(-7,7)
@@ -231,7 +216,7 @@ plt.plot(data_x, data_y)
 data = np.vstack((data_x, data_y)).T
 
 fis2 = fis()
-fis2.genfis(data, 1.1)
+fis2.genfis(data, 0.55)
 fis2.viewInputs()
 r = fis2.evalfis(np.vstack(data_x))
 
