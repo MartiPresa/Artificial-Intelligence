@@ -13,8 +13,8 @@ from sklearn.metrics import mean_squared_error
 import clusteringSustractivo as cl
 
 # ruta del archivo de datos
-path= '/Users/valentina/Documents/GitHub/Artificial-Intelligence/Problemas_Sugeno/Sugeno_VDA/samplesVDA1.txt'
-# path = 'C:/Users/marti/OneDrive/Documentos/GitHub/Artificial-Intelligence/Problemas_Sugeno/Sugeno_VDA/samplesVDA1.txt'
+# path= '/Users/valentina/Documents/GitHub/Artificial-Intelligence/Problemas_Sugeno/Sugeno_VDA/samplesVDA1.txt'
+path = 'C:/Users/marti/OneDrive/Documentos/GitHub/Artificial-Intelligence/Problemas_Sugeno/Sugeno_VDA/samplesVDA1.txt'
 
 def eleccion_datos(datos):
     # X = np.array(datos)
