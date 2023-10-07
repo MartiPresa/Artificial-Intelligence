@@ -10,7 +10,7 @@ from random import choice
 import pandas as pandas
 from sklearn.metrics import mean_squared_error
 import clusteringSustractivo as cl
-
+from sklearn.model_selection import train_test_split
 
 # Calcula el nivel de pertenencia de cada dato a las gaussianas
 def gaussmf(data, mean, sigma):
@@ -56,10 +56,10 @@ class fis_Sugeno:
     # def clusteringSustractivo(datos, r):
     #     return cl.clustering_sustractivo(datos,r)
     
-    def genfis(self, data, radii):
+    def genfis(self, data, radii,rb):
 
         start_time = time.time()
-        self.labels, self.clusters = cl.clustering_sustractivo(data, radii) # hace clustering
+        self.labels, self.clusters = cl.clustering_sustractivo(data, radii,rb) # hace clustering
         cluster_center = self.clusters
         #print(f'CLUSTERS = {self.clusters}')
         #print("--- %s seconds ---" % (time.time() - start_time))
@@ -157,6 +157,34 @@ class fis_Sugeno:
 
         return np.sum(acti*inp*coef/sumMu,axis=1)
 
+    def mse(self,training_data,test_data):
+        entrada_test = test_data[:,:-1]
+        target_test = test_data[:,-1]
+        target_train = training_data[:,-1]
+        salida_test = self.evalModelo(np.vstack(entrada_test))
+        salida_train = self.evalModelo(np.vstack(training_data[:,0]))
+        mse_train = mean_squared_error(target_train, salida_train)
+        mse_test = mean_squared_error(target_test, salida_test)
+        return mse_train,mse_test
+
+    def muestra(self,training_data,testing_data):
+        data_x = training_data[:,0] 
+        data_y = training_data[:,1] # target
+        reg = self.evalModelo(np.vstack(data_x))
+        # r,c = cl.clustering_sustractivo(training_data,1)
+        r,c = self.labels,self.clusters
+        fig,(ax0, ax1) = plt.subplots(nrows=2,figsize=(15, 10))
+        ax0.set_title('Clustering de los datos')
+        ax0.scatter(training_data[:,0],training_data[:,1], c=r)
+        ax0.scatter(c[:,0],c[:,1], marker='X')
+        self.viewInputs(ax1)
+        ax1.set_title('Campanas de Gauss')
+        # ax2.set_title('Rectas?')
+        # ax2.plot(data_x,data_y)
+        # ax2.plot(data_x,reg,linestyle='--')
+        # ax2.scatter(testing_data[:,0],testing_data[:,1], c='green') # muestro los datos de test para ver cuanto error hay con el modelo
+        ax0.scatter(c[:,0],c[:,1], marker='X')
+        plt.show()
 
     def viewInputs(self, ax):
         gaussianas = []
@@ -180,88 +208,23 @@ def lee_arch(path):
     auxDatos = np.array(datos)
     return auxDatos
     
-# def eleccion_datos(datos):
+# def eleccion_datos(data):
 #     # Convierte la lista de datos en una matriz NumPy
-#     auxDatos = datos[:]
-#     # print(f' TODOS LOS DATOS = {datos}')
-#     # print(f' cantidad de datos total= {len(datos)}')
-#     datos_test = []
-#     cant_datos_test = int(len(datos)*0.2)
+#     # auxDatos = datos[:]
+#     # # print(f' TODOS LOS DATOS = {datos}')
+#     # # print(f' cantidad de datos total= {len(datos)}')
+#     # datos_test = []
+#     # cant_datos_test = int(len(datos)*0.2)
 
-#     #Selecciona datos de test al azar
-#     data_frame = pandas.DataFrame(datos)
-#     filas_aleatorias = data_frame.sample(n=cant_datos_test)
-#     datos_test = filas_aleatorias.values
+#     # #Selecciona datos de test al azar
+#     # data_frame = pandas.DataFrame(auxDatos)
+#     # filas_aleatorias = data_frame.sample(n=cant_datos_test)
+#     # datos_test = filas_aleatorias.values
 
-#     datos_training = []
-#     [datos_training.append(x) for x in auxDatos if x not in datos_test]
+#     # datos_training = []
+#     # [datos_training.append(x) for x in auxDatos if x not in datos_test]
 #     # print(f'DATOS = {datos_training}')
 #     # print(f' cantidad de datos entrenamiento= {len(datos_training)}')
 
+#     X_train, X_test, y_train, y_test = train_test_split(data[:,0], data[:,1], test_size=0.2, random_state=42)
 #     return np.array(datos_training),np.array(datos_test)
-
-def mse(training_data,test_data):
-    #TESTEAMOS CON LOS DATOS DE TEST
-    entrada_test = test_data[:,:-1]
-    target_test = test_data[:,-1]
-    target_train = training_data[:,-1]
-    salida_test = Sugeno.evalModelo(np.vstack(entrada_test))
-    salida_train = Sugeno.evalModelo(np.vstack(training_data[:,0]))
-    mse_train = mean_squared_error(target_train, salida_train)
-    mse_test = mean_squared_error(target_test, salida_test)
-    return mse_train,mse_test
-
-def muestra(training_data,testing_data):
-    fig,(ax0, ax1, ax2) = plt.subplots(nrows=3,figsize=(15, 10))
-    ax0.set_title('Clustering de los datos')
-    ax0.scatter(training_data[:,0],training_data[:,1], c=r)
-    ax0.scatter(c[:,0],c[:,1], marker='X')
-    Sugeno.viewInputs(ax1)
-    ax1.set_title('Campanas de Gauss')
-    ax2.set_title('Rectas?')
-    ax2.plot(data_x,data_y)
-    ax2.plot(data_x,reg,linestyle='--')
-    ax2.scatter(testing_data[:,0],testing_data[:,1], c='green') # muestro los datos de test para ver cuanto error hay con el modelo
-    # ax0.scatter(c[:,0],c[:,1], marker='X')
-    plt.show()
-
-#------------------------------MAIN-------------------------------------------
-
-# Lectura de los datos, y selecciona cuales son para training y cuales para test
-path ='D:/Backup/Facultad/4to/Inteligencia Artificial/Practica/Artificial-Intelligence/Problemas_Sugeno/diodo.txt'
-
-
-training_data = []
-test_data = [] 
-training_data, test_data = eleccion_datos(path)
-
-data_x = training_data[:,0] 
-data_y = training_data[:,1] # target
-
-#plt.plot(data_x, data_y)
-# plt.ylim(-20,20)
-# plt.xlim(-7,7)
-
-# data = np.vstack((data_x, data_y)).T # ES NECESARIO? si queda igual que la matriz
-Sugeno = fis_Sugeno()
-Sugeno.genfis(training_data, 1.1)
-#Almacena la regresion lineal en r
-reg = Sugeno.evalModelo(np.vstack(data_x))
-
-r,c = cl.clustering_sustractivo(training_data,1)
-# r,c = Sugeno.clusteringSustractivo(training_data,1)
-
-#print(f'SOLUCIONES {fis2.solutions}')
-#print(f'REGLAS {fis2.rules}')
-
-
-#plt.figure()
-# plt.show()
-#fis3.rules
-
-# print(f'MSE train {mse_train}')
-x,y = mse(training_data,test_data)
-print(f'MSE test {y}')
-print(f'MSE training {x}')
-
-muestra(training_data,test_data)
