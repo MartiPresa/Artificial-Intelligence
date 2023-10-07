@@ -180,25 +180,25 @@ def lee_arch(path):
     auxDatos = np.array(datos)
     return auxDatos
     
-def eleccion_datos(datos):
-    # Convierte la lista de datos en una matriz NumPy
-    auxDatos = datos[:]
-    # print(f' TODOS LOS DATOS = {datos}')
-    # print(f' cantidad de datos total= {len(datos)}')
-    datos_test = []
-    cant_datos_test = int(len(datos)*0.2)
+# def eleccion_datos(datos):
+#     # Convierte la lista de datos en una matriz NumPy
+#     auxDatos = datos[:]
+#     # print(f' TODOS LOS DATOS = {datos}')
+#     # print(f' cantidad de datos total= {len(datos)}')
+#     datos_test = []
+#     cant_datos_test = int(len(datos)*0.2)
 
-    #Selecciona datos de test al azar
-    data_frame = pandas.DataFrame(datos)
-    filas_aleatorias = data_frame.sample(n=cant_datos_test)
-    datos_test = filas_aleatorias.values
+#     #Selecciona datos de test al azar
+#     data_frame = pandas.DataFrame(datos)
+#     filas_aleatorias = data_frame.sample(n=cant_datos_test)
+#     datos_test = filas_aleatorias.values
 
-    datos_training = []
-    [datos_training.append(x) for x in auxDatos if x not in datos_test]
-    # print(f'DATOS = {datos_training}')
-    # print(f' cantidad de datos entrenamiento= {len(datos_training)}')
+#     datos_training = []
+#     [datos_training.append(x) for x in auxDatos if x not in datos_test]
+#     # print(f'DATOS = {datos_training}')
+#     # print(f' cantidad de datos entrenamiento= {len(datos_training)}')
 
-    return np.array(datos_training),np.array(datos_test)
+#     return np.array(datos_training),np.array(datos_test)
 
 def mse(training_data,test_data):
     #TESTEAMOS CON LOS DATOS DE TEST
