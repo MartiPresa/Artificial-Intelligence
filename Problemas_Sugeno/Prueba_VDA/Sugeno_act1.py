@@ -45,8 +45,12 @@ class fis_Sugeno:
         self.memberfunc = []
         self.inputs = []
         self.clusters = []
+        self.k = 0
         self.labels = []
 
+    def get_k(self):
+        return self.k
+    
     def getLabels(self):
         return self.labels
     
@@ -55,13 +59,35 @@ class fis_Sugeno:
     
     # def clusteringSustractivo(datos, r):
     #     return cl.clustering_sustractivo(datos,r)
-    
+
+    def genfis_k(self, data, k):
+        start_time = time.time()
+        self.k = k
+        # self.labels, self.clusters = cl.clustering_sustractivo(data, radii,rb) # hace clustering
+        self.labels, self.clusters = cl.clustering_kmeans(data,k) # hace clustering
+        cluster_center = self.clusters
+        print(f'CLUSTERS = {self.clusters}')
+        #print("--- %s seconds ---" % (time.time() - start_time))
+        n_clusters = len(cluster_center)    #numero de clusters
+
+        cluster_center = cluster_center[:,:-1] #se queda con todas las columnas menos la ultima
+        P = data[:,:-1] # se queda con la primera columna, osea los X
+        # T = data[:,-1]
+        maxValue = np.max(P, axis=0)
+        minValue = np.min(P, axis=0)
+
+        self.inputs = [fisInput(maxValue[i], minValue[i],cluster_center[:,i]) for i in range(len(maxValue))]
+        #print(f'INPUTS = {self.inputs}')
+        self.rules = cluster_center
+        self.training(data)
+
     def genfis(self, data, radii,rb):
 
         start_time = time.time()
-        self.labels, self.clusters = cl.clustering_sustractivo(data, radii,rb) # hace clustering
+        # self.labels, self.clusters = cl.clustering_sustractivo(data, radii,rb) # hace clustering
+        self.labels, self.clusters = cl.clustering_kmeans(data, radii,rb) # hace clustering
         cluster_center = self.clusters
-        #print(f'CLUSTERS = {self.clusters}')
+        print(f'CLUSTERS = {self.clusters}')
         #print("--- %s seconds ---" % (time.time() - start_time))
         n_clusters = len(cluster_center)    #numero de clusters
 
@@ -86,15 +112,15 @@ class fis_Sugeno:
 
         #F contiene un array por cada cluster, que tienen los arrays? ni puta idea
         f = [np.prod(gaussmf(datos_entrada,cluster,sigma),axis=1) for cluster in self.rules]
-        print(f'valor de F {f}')
+        # print(f'valor de F {f}')
 
         nivel_acti = np.array(f).T #pasa el valor de f traspuesto
         #quedan los valores de pertenencia a los clusters por columnas
-        print("nivel acti")
-        print(nivel_acti)
+        # print("nivel acti")
+        # print(nivel_acti)
         sumMu = np.vstack(np.sum(nivel_acti,axis=1))# por cada dato suma el valor de pertenencia a cada cluster y lo pone en un vector
-        print("sumMu")
-        print(sumMu)
+        # print("sumMu")
+        # print(sumMu)
 
         datos_entrada = np.c_[datos_entrada, np.ones(len(datos_entrada))] #Agrega una columna de 1's a la matriz de datos de entrada
         print(datos_entrada)
@@ -112,8 +138,8 @@ class fis_Sugeno:
         acti = np.tile(nivel_acti,[1,n_vars]) 
         inp = datos_entrada[:, orden]
         #Estos ultimos 2 pasos amplian las matrices a 6 columnas
-        print(f'acti {acti}')
-        print(f'inp{inp}')
+        # print(f'acti {acti}')
+        # print(f'inp{inp}')
 
         #Hace una especie de agregacion entre todas las reglas (Suavizar rectas)
         A = acti*inp/sumMu # hace una especie de promedio pesado CREO
@@ -123,7 +149,7 @@ class fis_Sugeno:
         
        
 
-        print(f'VALOR DE A {A}')
+        # print(f'VALOR DE A {A}')
         # A = np.zeros((N, 2*n_clusters))
         # for jdx in range(n_clusters):
         #     for kdx in range(nVar):
@@ -135,7 +161,7 @@ class fis_Sugeno:
         #CUADRADOS MINIMOS --> lstsq 
         solutions, residuals, rank, s = np.linalg.lstsq(A,b,rcond=None) #solutions es el mse CREO
         self.solutions = solutions #.reshape(n_clusters,n_vars)
-        print(solutions)
+        # print(solutions)
         return 0
 
     def evalModelo(self, data):
@@ -167,14 +193,26 @@ class fis_Sugeno:
         mse_test = mean_squared_error(target_test, salida_test)
         return mse_train,mse_test
 
-    def muestra(self,training_data,testing_data):
+    def mspe(self,training_data,test_data): #Mean Squared Percentage Error
+        entrada_test = test_data[:,:-1]
+        target_test = test_data[:,-1]
+        target_train = training_data[:,-1]
+        salida_test = self.evalModelo(np.vstack(entrada_test))
+        salida_train = self.evalModelo(np.vstack(training_data[:,0]))
+        mse_train = mean_squared_error(target_train, salida_train)
+        mse_test = mean_squared_error(target_test, salida_test)
+        mspe_test = mse_test * 100 / np.mean(target_test)
+        mspe_train = mse_train * 100 / np.mean(target_train)
+        return mspe_train,mspe_test
+    
+    def muestra(self,training_data,testing_data,title):
         data_x = training_data[:,0] 
         data_y = training_data[:,1] # target
         reg = self.evalModelo(np.vstack(data_x))
         # r,c = cl.clustering_sustractivo(training_data,1)
         r,c = self.labels,self.clusters
         fig,(ax0, ax1) = plt.subplots(nrows=2,figsize=(15, 10))
-        ax0.set_title('Clustering de los datos')
+        ax0.set_title(title)
         ax0.scatter(training_data[:,0],training_data[:,1], c=r)
         ax0.scatter(c[:,0],c[:,1], marker='X')
         self.viewInputs(ax1)
@@ -207,24 +245,3 @@ def lee_arch(path):
     # Convierte la lista de datos en una matriz NumPy
     auxDatos = np.array(datos)
     return auxDatos
-    
-# def eleccion_datos(data):
-#     # Convierte la lista de datos en una matriz NumPy
-#     # auxDatos = datos[:]
-#     # # print(f' TODOS LOS DATOS = {datos}')
-#     # # print(f' cantidad de datos total= {len(datos)}')
-#     # datos_test = []
-#     # cant_datos_test = int(len(datos)*0.2)
-
-#     # #Selecciona datos de test al azar
-#     # data_frame = pandas.DataFrame(auxDatos)
-#     # filas_aleatorias = data_frame.sample(n=cant_datos_test)
-#     # datos_test = filas_aleatorias.values
-
-#     # datos_training = []
-#     # [datos_training.append(x) for x in auxDatos if x not in datos_test]
-#     # print(f'DATOS = {datos_training}')
-#     # print(f' cantidad de datos entrenamiento= {len(datos_training)}')
-
-#     X_train, X_test, y_train, y_test = train_test_split(data[:,0], data[:,1], test_size=0.2, random_state=42)
-#     return np.array(datos_training),np.array(datos_test)

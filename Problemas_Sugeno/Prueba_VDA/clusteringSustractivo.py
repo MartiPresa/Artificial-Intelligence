@@ -7,9 +7,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from scipy.spatial import distance_matrix
+from sklearn.datasets import make_blobs
+from sklearn.cluster import KMeans
+
+
+def clustering_kmeans(data,k):
+    kmeans = KMeans(k)
+    kmeans.fit(data)
+    labels = kmeans.labels_
+    centers = kmeans.cluster_centers_
+    return labels,centers
 
 #ALGORITMO DE CLUSTERING SUSTRACTIVO
-def clustering_sustractivo(data, Ra, Rb=0, AcceptRatio=0.3, RejectRatio=0.1):
+def clustering_sustractivo(data, Ra, Rb, AcceptRatio=0.3, RejectRatio=0.1):
     if Rb==0:
         Rb = Ra*1.15
     

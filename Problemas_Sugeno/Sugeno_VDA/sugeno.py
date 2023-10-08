@@ -82,7 +82,8 @@ data_x = training_data[:,0]
 data_y = training_data[:,1]
 
 # hago clustering 
-r, c = cl.clustering_sustractivo(training_data,1)
+r, c = cl.clustering_sustractivo(training_data,0.55)
+print(f"Clusters {c}")
 # grafico clusters
 plt.figure()
 plt.scatter(training_data[:,0],training_data[:,1], c=r)

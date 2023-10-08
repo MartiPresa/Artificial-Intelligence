@@ -11,6 +11,7 @@ import pandas as pandas
 from sklearn.metrics import mean_squared_error
 from Sugeno_act1 import fis_Sugeno
 import clusteringSustractivo as cl
+import copy
 
 def lee_arch(path):
     datos = []
@@ -61,34 +62,81 @@ data = lee_arch(path)
 training_data, test_data = split_data(data)
 data_x = training_data[:,0] 
 data_y = training_data[:,1] # target
-mse = []
-ratio = []
-# graficar(data)
-i = 0
-rb = 0.0
-while (i < 40):
-    
-    sugeno = fis_Sugeno()
-    sugeno.genfis(training_data, 1.1,rb) # ra,rb
-    #Almacena la regresion lineal en r
-    reg = sugeno.evalModelo(np.vstack(data_x))
-    x,y = sugeno.mse(training_data,test_data)
-    mse.append(y)
-    ratio.append(rb)
-    # print(f'MSE test {y}')
-    # print(f'MSE training {x}')
-    # sugeno.muestra(training_data,test_data)
-    i += 1
-    rb += 0.1
 
-print(mse)
-print(ratio)
-plt.scatter(mse, ratio, label='Datos')  # Graficar los datos
-plt.xlabel('mse')
-plt.ylabel('ratio')
-plt.title('mse vs rb')
+# graficar(data)
+
+#--------------------------Un solo modelo---
+# sugeno = fis_Sugeno()
+# # sugeno.genfis(training_data, 0.55,rb) # ra,rb
+# sugeno.genfis_k(training_data,5)
+# #Almacena la regresion lineal en r
+# reg = sugeno.evalModelo(np.vstack(data_x))
+# x,y = sugeno.mse(training_data,test_data)
+# sugeno.muestra(training_data,test_data)
+
+#------------------------------Modelos con clustering sustractivo
+# mse = []
+# ratio = []
+# i = 0
+# rb = 0.0
+# while (i < 40):
+#     sugeno = fis_Sugeno()
+#     sugeno.genfis(training_data, 0.55,rb) # ra,rb
+#     #Almacena la regresion lineal en r
+#     reg = sugeno.evalModelo(np.vstack(data_x))
+#     x,y = sugeno.mse(training_data,test_data)
+#     mse.append(y)
+#     ratio.append(rb)
+#     # print(f'MSE test {y}')
+#     # print(f'MSE training {x}')
+#     # sugeno.muestra(training_data,test_data)
+#     i += 1
+#     rb += 0.1
+# print(mse)
+# print(ratio)
+# plt.scatter(mse, ratio, label='Datos')  # Graficar los datos
+# plt.xlabel('mse')
+# plt.ylabel('ratio')
+# plt.title('mse vs rb')
+# plt.legend()  # Mostrar la leyenda
+# plt.grid(True)  # Mostrar cuadrícula
+# plt.show()  # Mostrar el gráfico
+
+
+#------------------------------Modelos con clustering Kmeans
+mspe = []
+min_mspe = 10000
+k_clusters = []
+modelos = []
+k = 0
+i = 3
+while (i <= 20):
+    sugeno = fis_Sugeno()
+    modelos.append(sugeno)
+    sugeno.genfis_k(training_data,i) # ra,rb
+    reg = sugeno.evalModelo(np.vstack(data_x))
+    x,y = sugeno.mspe(training_data,test_data)
+    mspe.append(y)
+    if(min_mspe > y): # guardo el mejor modelo
+        min_mspe = y
+        k = i
+        mejor_sugeno = copy.deepcopy(sugeno)
+    k_clusters.append(i)
+    i += 1
+
+plt.scatter(k_clusters,mspe, label='Datos')  # Graficar los datos
+plt.ylabel('mse')
+plt.xlabel('Cantidad de reglas R')
+plt.title('R vs mspe')
+plt.yticks(mspe)
+plt.xticks(k_clusters)
 plt.legend()  # Mostrar la leyenda
 plt.grid(True)  # Mostrar cuadrícula
 plt.show()  # Mostrar el gráfico
+mejor_sugeno.muestra(training_data,test_data,f"Sugeno con {k} clusters")
 
-# print(training_data)
+#------------------Entreno Sugeno con todos los datos y con los hiperparametros del mejor_sugeno
+# nuevo_sugeno = fis_Sugeno
+# nuevo_sugeno.genfis_k(data,k)
+
+
