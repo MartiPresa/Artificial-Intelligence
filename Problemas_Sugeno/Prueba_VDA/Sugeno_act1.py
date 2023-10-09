@@ -66,7 +66,7 @@ class fis_Sugeno:
         # self.labels, self.clusters = cl.clustering_sustractivo(data, radii,rb) # hace clustering
         self.labels, self.clusters = cl.clustering_kmeans(data,k) # hace clustering
         cluster_center = self.clusters
-        print(f'CLUSTERS = {self.clusters}')
+        # print(f'CLUSTERS = {self.clusters}')
         #print("--- %s seconds ---" % (time.time() - start_time))
         n_clusters = len(cluster_center)    #numero de clusters
 
@@ -87,7 +87,7 @@ class fis_Sugeno:
         # self.labels, self.clusters = cl.clustering_sustractivo(data, radii,rb) # hace clustering
         self.labels, self.clusters = cl.clustering_kmeans(data, radii,rb) # hace clustering
         cluster_center = self.clusters
-        print(f'CLUSTERS = {self.clusters}')
+        # print(f'CLUSTERS = {self.clusters}')
         #print("--- %s seconds ---" % (time.time() - start_time))
         n_clusters = len(cluster_center)    #numero de clusters
 
@@ -123,7 +123,7 @@ class fis_Sugeno:
         # print(sumMu)
 
         datos_entrada = np.c_[datos_entrada, np.ones(len(datos_entrada))] #Agrega una columna de 1's a la matriz de datos de entrada
-        print(datos_entrada)
+        # print(datos_entrada)
         n_vars = datos_entrada.shape[1] #almacena la cantidad de columnas en la matriz anterior
         #print(f'SHAPE DATOS {datos_entrada.shape}')
 

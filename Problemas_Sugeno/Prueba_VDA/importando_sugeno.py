@@ -50,6 +50,14 @@ def graficar(auxDatos):
     plt.grid(True)  # Mostrar cuadrícula
     plt.show()  # Mostrar el gráfico
 
+def sobremuestreo(data):
+   
+    num_filas, num_columnas = data.shape
+    promedios = np.zeros((num_filas-1, num_columnas))
+    for i in range(num_filas-1):
+        promedios [i,:] = (abs(data[i,:] + data[i+1,:])/2.0)
+
+    return promedios
 
 
 path = 'C:/Users/marti/OneDrive/Documentos/GitHub/Artificial-Intelligence/Problemas_Sugeno/Sugeno_VDA/samplesVDA1.txt'
@@ -105,7 +113,8 @@ data_y = training_data[:,1] # target
 
 #------------------------------Modelos con clustering Kmeans
 mspe = []
-min_mspe = 10000
+test_mspe = 10000
+training_mspe = 0
 k_clusters = []
 modelos = []
 k = 0
@@ -117,8 +126,9 @@ while (i <= 20):
     reg = sugeno.evalModelo(np.vstack(data_x))
     x,y = sugeno.mspe(training_data,test_data)
     mspe.append(y)
-    if(min_mspe > y): # guardo el mejor modelo
-        min_mspe = y
+    if(test_mspe > y): # guardo el mejor modelo
+        test_mspe = y
+        training_mspe = x
         k = i
         mejor_sugeno = copy.deepcopy(sugeno)
     k_clusters.append(i)
@@ -135,8 +145,17 @@ plt.grid(True)  # Mostrar cuadrícula
 plt.show()  # Mostrar el gráfico
 mejor_sugeno.muestra(training_data,test_data,f"Sugeno con {k} clusters")
 
+
 #------------------Entreno Sugeno con todos los datos y con los hiperparametros del mejor_sugeno
-# nuevo_sugeno = fis_Sugeno
-# nuevo_sugeno.genfis_k(data,k)
+nuevo_sugeno = fis_Sugeno()
+nuevo_sugeno.genfis_k(data,k)
+x,y = nuevo_sugeno.mspe(data,data)
+# print(f"test error {test_mspe}")
+# print(f"training error {training_mspe}")
+# print(f"training error nuevo sugeno{x}")
 
-
+datos_sobremuestreo = sobremuestreo(data)
+nuevo_mspe,y = nuevo_sugeno.mspe(datos_sobremuestreo,datos_sobremuestreo)
+viejo_mspe, x = mejor_sugeno.mspe(datos_sobremuestreo,datos_sobremuestreo)
+# print(f"modelo viejo: test error sobremuestreo {viejo_mspe}")
+# print(f"modelo nuevo: test error sobremuestreo {nuevo_mspe}")
