@@ -47,6 +47,8 @@ class fis_Sugeno:
         self.clusters = []
         self.k = 0
         self.labels = []
+        self.mse_train = 0
+        self.mse_test = 0
 
     def get_k(self):
         return self.k
@@ -56,6 +58,10 @@ class fis_Sugeno:
     
     def getClusters(self):
         return self.clusters
+    def get_mse_train(self):
+        return self.mse_train
+    def get_mse_test(self):
+        return self.mse_test
     
     # def clusteringSustractivo(datos, r):
     #     return cl.clustering_sustractivo(datos,r)
@@ -205,6 +211,36 @@ class fis_Sugeno:
         mspe_train = mse_train * 100 / np.mean(target_train)
         return mspe_train,mspe_test
     
+    def grafica_mse(self, datos,mse_train):
+            salidas = self.evalModelo(np.vstack(datos[:,0]))
+            error = mean_squared_error(datos[:, 1], salidas)
+            plt.figure(figsize=(10,5))
+            plt.scatter(datos[:, 0], datos[:, 1], label='Targets', c='g')
+            plt.scatter(datos[:, 0], salidas,
+                        label='Salida del modelo', c='red')
+
+            # Grafica las lineas entre el target y la salida del modelo
+            # Si se equivocan con mas del 20% lo marca en rojo
+            for i, point in enumerate(datos[:, 0]):
+                x = datos[i, 0]
+                y = datos[i, 1]
+                color = 'red' if abs(salidas[i]-y)/100 > 0.2 else 'green'
+                plt.plot([x, x], [y, salidas[i]], c=color,
+                        alpha=0.5, linestyle='--')
+
+            plt.xlabel('Tiempo [ms]')
+            plt.ylabel('VDA')
+            plt.title('Targets vs Salida del modelo')
+            plt.text(200, 620, f'MSE Test= {error}', bbox={
+                    'facecolor': 'skyblue', 'alpha': 0.5, 'pad': 8})
+            plt.text(200, 580, f'MSE Train= {mse_train}', bbox={
+                    'facecolor': 'skyblue', 'alpha': 0.5, 'pad': 8})
+            plt.legend()
+            plt.grid(True)
+            plt.show()
+
+            return error
+
     def muestra(self,training_data,testing_data,title):
         data_x = training_data[:,0] 
         data_y = training_data[:,1] # target
