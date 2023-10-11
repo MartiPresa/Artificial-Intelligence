@@ -52,7 +52,7 @@ def sobremuestreo(data):
     return promedios
 
 
-path = 'C:/Users/marti/OneDrive/Documentos/GitHub/Artificial-Intelligence/Problemas_Sugeno/Sugeno_VDA/samplesVDA1.txt'
+path = 'Problemas_Sugeno\TP_SUGENO_VDA\samplesVDA1.txt'
 datos = lee_arch(path)
 data = []
 training_data = []
