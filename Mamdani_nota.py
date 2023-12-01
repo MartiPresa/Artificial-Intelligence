@@ -1,8 +1,7 @@
 """
 Reglas de Mamdani
 
-R1
-- Si NOTA es BAJA entonces DESAPROBADO
+
 
 R2
 - SR1 Si CONCEPTO es REGULAR y NOTA es MEDIA entonces HABILITADO <-- min|__ max
@@ -14,7 +13,6 @@ R3
 - SR5 Si CONCEPTO es EXCELENTE y NOTA es MEDIA entonces PROMOCION <-- min| 
 
 """
-
 import numpy as np
 import skfuzzy as fuzz
 import matplotlib.pyplot as plt
@@ -65,35 +63,59 @@ ax2.legend()
 # The exact values 6.5 and 9.8 do not exist on our universes...
 # This is what fuzz.interp_membership exists for!
 
-concept_level_reg = fuzz.interp_membership(concept, conceptReg, 5)
-concept_level_bueno = fuzz.interp_membership(concept, conceptBueno, 5)
-concept_level_exc = fuzz.interp_membership(concept, conceptExc, 5)
+concept_level_reg = fuzz.interp_membership(concept, conceptReg,4)
+concept_level_bueno = fuzz.interp_membership(concept, conceptBueno, 4)
+concept_level_exc = fuzz.interp_membership(concept, conceptExc, 4)
 
-numeric_level_bajo = fuzz.interp_membership(numeric, numericBajo, 100)
-numeric_level_med = fuzz.interp_membership(numeric, numericMed, 100)
-numeric_level_alto = fuzz.interp_membership(numeric, numericAlto, 100)
+numeric_level_bajo = fuzz.interp_membership(numeric, numericBajo, 50)
+numeric_level_med = fuzz.interp_membership(numeric, numericMed, 50)
+numeric_level_alto = fuzz.interp_membership(numeric, numericAlto, 50)
 
 print(f'CONCEPTO REG{concept_level_reg} \n CONCEPTO BUENO{concept_level_bueno} \n CONCEPTO EXC{concept_level_exc} ')
 print(f'NOTA BAJA{numeric_level_bajo} \n NOTA MEDIA{numeric_level_med} \n NOTA ALTA{numeric_level_alto} ')
 
-# Rule 1 -DESAPROBAR
+# R1
+# - Si NOTA es BAJA entonces DESAPROBADO
 nota_final_des = np.fmin(numeric_level_bajo, totalMin)
 
-# Rule 2 -HABILITAR
-subrule1 = (concept_level_reg * 0.2 + numeric_level_med * 0.8)
-subrule2 = (concept_level_reg* 0.2 + numeric_level_alto * 0.8)
+# R2
+# - SR1 Si CONCEPTO es REGULAR y NOTA es MEDIA entonces HABILITADO <-- min|__ max
+# - SR2 Si CONCEPTO es REGULAR y NOTA es ALTA entonces HABILITADO <--min  |
+subrule1 = (concept_level_reg * 0.2 + numeric_level_med* 0.8)
+subrule2 = (concept_level_reg* 0.2 + numeric_level_alto* 0.8)
 # subrule1 or subrule2 --> fmax
 active_rule2 = np.fmax(subrule1, subrule2) 
 
 # hacemos multiplicacion en vez de usar el fmin?
 nota_final_hab = np.fmin(active_rule2, totalMed) 
 
-# Rule 3 - PROMOCIONAR
+# R3
+# - SR3 Si CONCEPTO es BUENO y NOTA es ALTA entonces PROMOCION   <-- min   | 
+# - SR4 Si CONCEPTO es EXCELENTE y NOTA es ALTA entonces PROMOCION <-- min |---> max
+# - SR5 Si CONCEPTO es EXCELENTE y NOTA es MEDIA entonces PROMOCION <-- min| 
 subrule3 = (concept_level_bueno * 0.2 + numeric_level_alto * 0.8)
-subrule4 = (concept_level_exc * 0.2 + numeric_level_alto * 0.8)
+subrule4 = (concept_level_exc * 0.1 + numeric_level_alto * 0.9)
 subrule5 = np.fmin(concept_level_exc, numeric_level_med)
 active_rule3 = np.fmax(subrule3, np.fmax(subrule4,subrule5))
 #active_rule3 = np.fmax(subrule3, subrule4)
+
+# # Rule 1 - DESAPROBAR
+# nota_final_des = np.fmin(numeric_level_bajo, totalMin)
+
+# # Rule 2 - HABILITAR
+# # Ajusta los factores para dar más peso a la nota numérica
+# subrule1 = (concept_level_reg * 0.1 + numeric_level_med * 0.9)
+# subrule2 = (concept_level_reg * 0.1 + numeric_level_alto * 0.9)
+# active_rule2 = np.fmax(subrule1, subrule2)
+# nota_final_hab = np.fmin(active_rule2, totalMed)
+
+# # Rule 3 - PROMOCIONAR
+# # Ajusta los factores para dar más peso a la nota numérica
+# subrule3 = (concept_level_bueno * 0.1 + numeric_level_alto * 0.9)
+# subrule4 = (concept_level_exc * 0.1 + numeric_level_alto * 0.9)
+# subrule5 = np.fmin(concept_level_exc, numeric_level_med)
+# active_rule3 = np.fmax(subrule3, np.fmax(subrule4, subrule5))
+# nota_final_prom = np.fmin(active_rule3, totalMax)
 
 # TRUNCA el grafico de nota final max
 nota_final_promo = np.fmin(active_rule3, totalMax)
